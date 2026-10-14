@@ -1,0 +1,11 @@
+{
+  "name": "ationic-invoice-generator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Professional A4 invoice generator for Ationic Digital Marketing Agency. Vanilla HTML/CSS/JS with genuine vector A4 PDF export.",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["invoice", "ationic", "pdf", "a4"],
+  "license": "UNLICENSED"
+}

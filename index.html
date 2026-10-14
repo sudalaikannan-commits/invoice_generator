@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ationic Invoice Generator</title>
+<meta name="description" content="Professional A4 invoice generator for Ationic Digital Marketing Agency.">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/invoice.css">
+</head>
+<body>
+<div class="app">
+
+  <header class="app-header">
+    <div class="app-brand">
+      <img class="app-logo-img" src="assets/ationic-logo.png" alt="Ationic">
+    </div>
+    <nav class="app-actions" aria-label="Invoice actions">
+      <button type="button" class="btn" id="btnNew">New Invoice</button>
+      <button type="button" class="btn btn-primary" id="btnSave">Save Invoice</button>
+      <button type="button" class="btn" id="btnPreview">Preview Invoice</button>
+      <button type="button" class="btn btn-accent" id="btnDownload">Download PDF</button>
+      <button type="button" class="btn" id="btnPrint">Print Invoice</button>
+      <button type="button" class="btn" id="btnHistory">Invoice History</button>
+      <button type="button" class="btn btn-ghost" id="btnReset">Reset Form</button>
+    </nav>
+  </header>
+
+  <div class="mobile-tabs" role="tablist">
+    <button type="button" class="tab active" data-tab="editor" role="tab">Editor</button>
+    <button type="button" class="tab" data-tab="preview" role="tab">Preview</button>
+  </div>
+
+  <main class="workspace">
+
+    <section class="pane editor-pane" id="editorPane" aria-label="Invoice editor">
+      <div class="editor-scroll">
+
+        <div class="storage-banner" id="storageBanner" hidden></div>
+        <div class="validation-box" id="validationBox" hidden>
+          <strong>Please fix the following before saving or exporting:</strong>
+          <ul id="validationList"></ul>
+        </div>
+
+        <section class="card">
+          <header class="card-head">
+            <h2>Invoice Details</h2>
+            <div class="card-head-actions">
+              <button type="button" class="mini" id="btnSuggestNumber">Suggest no.</button>
+            </div>
+          </header>
+          <div class="field-grid">
+            <label class="field">
+              <span class="field-label">Invoice Number</span>
+              <input type="text" id="invoiceNumber" data-bind="meta.invoiceNumber" autocomplete="off" placeholder="AT-2026-001">
+            </label>
+            <label class="field">
+              <span class="field-label">Currency</span>
+              <select id="currencySelect" data-bind="meta.currency"></select>
+            </label>
+            <label class="field">
+              <span class="field-label">Invoice Date</span>
+              <input type="date" data-bind="meta.invoiceDate">
+            </label>
+            <label class="field">
+              <span class="field-label">Due Date</span>
+              <input type="date" data-bind="meta.dueDate">
+            </label>
+            <label class="field">
+              <span class="field-label">Invoice Status</span>
+              <select id="statusSelect" data-bind="payment.status"></select>
+            </label>
+            <div class="field">
+              <span class="field-label">Quick payment terms</span>
+              <div class="chip-row">
+                <button type="button" class="chip" data-terms="0">Due now</button>
+                <button type="button" class="chip" data-terms="7">Net 7</button>
+                <button type="button" class="chip" data-terms="15">Net 15</button>
+                <button type="button" class="chip" data-terms="30">Net 30</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="optional-block">
+            <label class="switch">
+              <input type="checkbox" data-bind="options.sections.reference" data-type="bool">
+              <span class="switch-track"></span>
+              <span class="switch-text">Include reference number</span>
+            </label>
+            <label class="field">
+              <span class="field-label">Reference Number (optional)</span>
+              <input type="text" data-bind="meta.reference" autocomplete="off">
+            </label>
+          </div>
+
+          <div class="optional-block">
+            <label class="switch">
+              <input type="checkbox" data-bind="options.sections.poNumber" data-type="bool">
+              <span class="switch-track"></span>
+              <span class="switch-text">Include purchase order number</span>
+            </label>
+            <label class="field">
+              <span class="field-label">Purchase Order Number (optional)</span>
+              <input type="text" data-bind="meta.poNumber" autocomplete="off">
+            </label>
+          </div>
+        </section>
+
+        <section class="card">
+          <header class="card-head"><h2>Customer / Billed To</h2></header>
+          <div class="saved-row">
+            <label class="field">
+              <span class="field-label">Saved customers</span>
+              <select id="customerSavedSelect"><option value="">Select a saved customer…</option></select>
+            </label>
+            <div class="saved-actions">
+              <button type="button" class="mini" id="btnSaveCustomer">Save customer</button>
+              <button type="button" class="mini" id="btnDeleteCustomer">Delete</button>
+            </div>
+          </div>
+          <div class="field-grid">
+            <label class="field">
+              <span class="field-label">Customer / Company Name</span>
+              <input type="text" data-bind="customer.name" autocomplete="off">
+            </label>
+            <label class="field">
+              <span class="field-label">Contact Person</span>
+              <input type="text" data-bind="customer.contactPerson" autocomplete="off">
+            </label>
+            <label class="field">
+              <span class="field-label">Email Address</span>
+              <input type="email" data-bind="customer.email" autocomplete="off">
+            </label>
+            <label class="field">
+              <span class="field-label">Phone Number</span>
+              <input type="tel" data-bind="customer.phone" autocomplete="off">
+            </label>
+            <label class="field field-wide">
+              <span class="field-label">Billing Address</span>
+              <textarea rows="2" data-bind="customer.address"></textarea>
+            </label>
+            <label class="field">
+              <span class="field-label">City</span>
+              <input type="text" data-bind="customer.city" autocomplete="off">
+            </label>
+            <label class="field">
+              <span class="field-label">State</span>
+              <input type="text" data-bind="customer.state" autocomplete="off">
+            </label>
+            <label class="field">
+              <span class="field-label">PIN Code</span>
+              <input type="text" data-bind="customer.pincode" autocomplete="off">
+            </label>
+            <label class="field">
+              <span class="field-label">Country</span>
+              <input type="text" data-bind="customer.country" autocomplete="off">
+            </label>
+          </div>
+          <div class="optional-block">
+            <label class="switch">
+              <input type="checkbox" data-bind="options.sections.customerGstin" data-type="bool">
+              <span class="switch-track"></span>
+              <span class="switch-text">Show customer GSTIN (when GST is enabled)</span>
+            </label>
+            <label class="field">
+              <span class="field-label">Customer GSTIN (optional)</span>
+              <input type="text" data-bind="customer.gstin" autocomplete="off">
+            </label>
+          </div>
+          <div class="inline-switches">
+            <label class="switch">
+              <input type="checkbox" data-bind="options.sections.customerContact" data-type="bool">
+              <span class="switch-track"></span>
+              <span class="switch-text">Show contact information</span>
+            </label>
+            <label class="switch">
+              <input type="checkbox" data-bind="options.sections.billingAddress" data-type="bool">
+              <span class="switch-track"></span>
+              <span class="switch-text">Show billing address</span>
+            </label>
+          </div>
+        </section>
+
+        <section class="card">
+          <header class="card-head"><h2>Agency / From</h2></header>
+          <div class="field-grid">
+            <label class="field field-wide">
+              <span class="field-label">Business Name</span>
+              <input type="text" data-bind="agency.name" autocomplete="off">
+            </label>
+            <label class="field field-wide">
+              <span class="field-label">Address</span>
+              <textarea rows="2" data-bind="agency.address"></textarea>
+            </label>
+            <label class="field">
+              <span class="field-label">City</span>
+              <input type="text" data-bind="agency.city" autocomplete="off">
+            </label>
+            <label class="field">
+              <span class="field-label">State</span>
+              <input type="text" data-bind="agency.state" autocomplete="off">
+            </label>
+            <label class="field">
+              <span class="field-label">PIN Code</span>
+              <input type="text" data-bind="agency.pincode" autocomplete="off">
+            </label>
+            <label class="field">
+              <span class="field-label">Country</span>
+              <input type="text" data-bind="agency.country" autocomplete="off">
+            </label>
+            <label class="field">
+              <span class="field-label">Phone</span>
+              <input type="tel" data-bind="agency.phone" autocomplete="off">
+            </label>
+            <label class="field">
+              <span class="field-label">Email</span>
+              <input type="email" data-bind="agency.email" autocomplete="off">
+            </label>
+            <label class="field field-wide">
+              <span class="field-label">Website</span>
+              <input type="url" data-bind="agency.website" autocomplete="off">
+            </label>
+          </div>
+          <div class="optional-block">
+            <label class="switch">
+              <input type="checkbox" data-bind="options.sections.agencyGstin" data-type="bool">
+              <span class="switch-track"></span>
+              <span class="switch-text">Show agency GSTIN (when GST is enabled)</span>
+            </label>
+            <label class="field">
+              <span class="field-label">Agency GSTIN (optional)</span>
+              <input type="text" data-bind="agency.gstin" autocomplete="off">
+            </label>
+          </div>
+          <div class="optional-block">
+            <label class="switch">
+              <input type="checkbox" data-bind="options.sections.registration" data-type="bool">
+              <span class="switch-track"></span>
+              <span class="switch-text">Show registration details</span>
+            </label>
+            <label class="field">
+              <span class="field-label">Registration Details (optional)</span>
+              <input type="text" data-bind="agency.registration" autocomplete="off">
+            </label>
+          </div>
+        </section>
+
+        <section class="card">
+          <header class="card-head">
+            <h2>Services</h2>
+            <div class="card-head-actions">
+              <button type="button" class="mini" id="btnAddService">+ Add Service</button>
+            </div>
+          </header>
+          <datalist id="serviceList"></datalist>
+          <datalist id="unitList"></datalist>
+          <div class="items-head">
+            <span>Service</span><span>Qty</span><span>Unit</span><span>Rate</span><span>Discount</span><span class="tax-col">Tax %</span><span>Total</span><span></span>
+          </div>
+          <div id="itemsContainer"></div>
+          <p class="hint">Add as many service rows as you need. Long invoices continue onto additional A4 pages automatically.</p>
+        </section>
+
+        <section class="card">
+          <header class="card-head"><h2>Discounts &amp; Additional Charges</h2></header>
+          <div class="field-grid">
+            <label class="field">
+              <span class="field-label">Invoice Discount Type</span>
+              <select id="discountType" data-bind="discount.type">
+                <option value="amount">Fixed amount</option>
+                <option value="percent">Percentage</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field-label">Invoice Discount Value</span>
+              <input type="number" min="0" step="0.01" data-bind="discount.value" data-type="number">
+            </label>
+            <label class="field field-wide">
+              <span class="field-label">Discount Label</span>
+              <input type="text" data-bind="discount.label" autocomplete="off" placeholder="Discount">
+            </label>
+          </div>
+          <div class="optional-block">
+            <label class="switch">
+              <input type="checkbox" data-bind="options.sections.additionalCharges" data-type="bool">
+              <span class="switch-track"></span>
+              <span class="switch-text">Include additional charges</span>
+            </label>
+            <div id="chargesContainer" class="charges"></div>
+            <button type="button" class="mini" id="btnAddCharge">+ Add charge</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <header class="card-head"><h2>GST &amp; Tax</h2></header>
+          <label class="switch switch-lg">
+            <input type="checkbox" id="gstEnabled" data-bind="options.gst.enabled" data-type="bool">
+            <span class="switch-track"></span>
+            <span class="switch-text">Enable GST / Tax on this invoice</span>
+          </label>
+          <div id="gstFields" class="gst-fields" hidden>
+            <div class="field-grid">
+              <label class="field">
+                <span class="field-label">Pricing</span>
+                <select data-bind="options.gst.mode">
+                  <option value="exclusive">GST exclusive (added to total)</option>
+                  <option value="inclusive">GST inclusive (included in prices)</option>
+                </select>
+              </label>
+              <label class="field">
+                <span class="field-label">Tax Breakup</span>
+                <select data-bind="options.gst.split">
+                  <option value="cgst_sgst">CGST + SGST</option>
+                  <option value="igst">IGST</option>
+                </select>
+              </label>
+              <label class="field">
+                <span class="field-label">Default GST Rate</span>
+                <select id="gstDefaultRate" data-bind="options.gst.defaultRate" data-type="number"></select>
+              </label>
+              <label class="field">
+                <span class="field-label">Place of Supply (optional)</span>
+                <input type="text" data-bind="options.gst.placeOfSupply" autocomplete="off">
+              </label>
+              <label class="field field-wide">
+                <span class="field-label">SAC Code (optional)</span>
+                <input type="text" data-bind="options.gst.sac" autocomplete="off">
+              </label>
+            </div>
+            <div class="inline-switches">
+              <label class="switch">
+                <input type="checkbox" data-bind="options.sections.sac" data-type="bool">
+                <span class="switch-track"></span>
+                <span class="switch-text">Show SAC code on invoice</span>
+              </label>
+              <label class="switch">
+                <input type="checkbox" data-bind="options.sections.placeOfSupply" data-type="bool">
+                <span class="switch-track"></span>
+                <span class="switch-text">Show place of supply</span>
+              </label>
+            </div>
+            <p class="hint">Tax is only applied when GST is enabled. Set a rate per service row. Ationic does not determine which GST rate is legally applicable to a service — confirm rates with your tax advisor.</p>
+          </div>
+          <p class="hint" id="gstOffHint">GST is disabled. No tax is added and all tax-related columns and fields are hidden from the invoice.</p>
+        </section>
+
+        <section class="card">
+          <header class="card-head"><h2>Payment Information</h2></header>
+          <label class="switch">
+            <input type="checkbox" data-bind="options.sections.bank" data-type="bool">
+            <span class="switch-track"></span>
+            <span class="switch-text">Include bank transfer details</span>
+          </label>
+          <div class="field-grid" id="bankFields">
+            <label class="field"><span class="field-label">Bank Name</span><input type="text" data-bind="bank.bankName" autocomplete="off"></label>
+            <label class="field"><span class="field-label">Account Holder Name</span><input type="text" data-bind="bank.accountHolder" autocomplete="off"></label>
+            <label class="field"><span class="field-label">Account Number</span><input type="text" data-bind="bank.accountNumber" autocomplete="off"></label>
+            <label class="field"><span class="field-label">IFSC Code</span><input type="text" data-bind="bank.ifsc" autocomplete="off"></label>
+            <label class="field"><span class="field-label">Branch Name</span><input type="text" data-bind="bank.branch" autocomplete="off"></label>
+          </div>
+          <label class="switch">
+            <input type="checkbox" data-bind="options.sections.upi" data-type="bool">
+            <span class="switch-track"></span>
+            <span class="switch-text">Include UPI payment details</span>
+          </label>
+          <div class="field-grid" id="upiFields">
+            <label class="field field-wide"><span class="field-label">UPI ID</span><input type="text" data-bind="upi.id" autocomplete="off"></label>
+          </div>
+          <label class="switch">
+            <input type="checkbox" data-bind="options.sections.paymentInstructions" data-type="bool">
+            <span class="switch-track"></span>
+            <span class="switch-text">Include payment instructions</span>
+          </label>
+          <label class="field field-wide">
+            <span class="field-label">Payment Instructions</span>
+            <textarea rows="2" data-bind="paymentInstructions"></textarea>
+          </label>
+          <label class="switch">
+            <input type="checkbox" data-bind="options.sections.paymentTerms" data-type="bool">
+            <span class="switch-track"></span>
+            <span class="switch-text">Include payment terms</span>
+          </label>
+          <label class="field field-wide">
+            <span class="field-label">Payment Terms</span>
+            <textarea rows="2" data-bind="paymentTerms"></textarea>
+          </label>
+        </section>
+
+        <section class="card">
+          <header class="card-head"><h2>Payment Tracking</h2></header>
+          <div class="field-grid">
+            <label class="field">
+              <span class="field-label">Amount Paid</span>
+              <input type="number" min="0" step="0.01" data-bind="payment.amountPaid" data-type="number">
+            </label>
+            <label class="field">
+              <span class="field-label">Payment Date</span>
+              <input type="date" data-bind="payment.paymentDate">
+            </label>
+            <label class="field">
+              <span class="field-label">Payment Method</span>
+              <select id="paymentMethodSelect" data-bind="payment.method"></select>
+            </label>
+            <label class="field">
+              <span class="field-label">Transaction Reference</span>
+              <input type="text" data-bind="payment.txnRef" autocomplete="off">
+            </label>
+            <label class="field">
+              <span class="field-label">Payment Status</span>
+              <select id="paymentStatusSelect" data-bind="payment.status"></select>
+            </label>
+          </div>
+          <div class="status-note" id="statusNote"></div>
+          <div class="summary-strip" id="editorSummary"></div>
+        </section>
+
+        <section class="card">
+          <header class="card-head"><h2>Notes &amp; Terms</h2></header>
+          <label class="switch">
+            <input type="checkbox" data-bind="options.sections.notes" data-type="bool">
+            <span class="switch-track"></span>
+            <span class="switch-text">Include notes</span>
+          </label>
+          <label class="field field-wide">
+            <span class="field-label">Notes</span>
+            <textarea rows="3" data-bind="notes"></textarea>
+          </label>
+          <label class="switch">
+            <input type="checkbox" data-bind="options.sections.terms" data-type="bool">
+            <span class="switch-track"></span>
+            <span class="switch-text">Include terms and conditions</span>
+          </label>
+          <label class="field field-wide">
+            <span class="field-label">Terms &amp; Conditions</span>
+            <textarea rows="3" data-bind="terms"></textarea>
+          </label>
+        </section>
+
+        <section class="card">
+          <header class="card-head"><h2>Branding &amp; Footer</h2></header>
+          <div class="logo-row">
+            <div class="logo-preview" id="logoPreview"></div>
+            <div class="logo-controls">
+              <label class="btn btn-file">
+                Upload logo
+                <input type="file" id="logoInput" accept="image/png,image/jpeg,image/webp" hidden>
+              </label>
+              <button type="button" class="mini" id="btnRemoveLogo">Remove logo</button>
+              <p class="hint">The official Ationic logo is used on every invoice by default. Upload a file only if you need to replace it. It is placed on the invoice without any modification.</p>
+            </div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" data-bind="options.sections.amountInWords" data-type="bool">
+            <span class="switch-track"></span>
+            <span class="switch-text">Show amount in words</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" data-bind="options.sections.footerTagline" data-type="bool">
+            <span class="switch-track"></span>
+            <span class="switch-text">Footer: BUILD. MARKET. GROW.</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" data-bind="options.sections.footerInstagram" data-type="bool">
+            <span class="switch-track"></span>
+            <span class="switch-text">Footer: Instagram</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" data-bind="options.sections.footerFacebook" data-type="bool">
+            <span class="switch-track"></span>
+            <span class="switch-text">Footer: Facebook</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" data-bind="options.sections.footerWebsite" data-type="bool">
+            <span class="switch-track"></span>
+            <span class="switch-text">Footer: Website</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" data-bind="options.sections.footerMessage" data-type="bool">
+            <span class="switch-track"></span>
+            <span class="switch-text">Include custom footer message</span>
+          </label>
+          <label class="field field-wide">
+            <span class="field-label">Custom Footer Message</span>
+            <textarea rows="2" data-bind="footerMessage"></textarea>
+          </label>
+        </section>
+
+      </div>
+    </section>
+
+    <section class="pane preview-pane" id="previewPane" aria-label="Live invoice preview">
+      <div class="preview-toolbar">
+        <span class="preview-title">Live A4 Preview</span>
+        <span class="preview-meta" id="previewMeta">A4 · 210 × 297 mm</span>
+      </div>
+      <div class="preview-scaler" id="previewScaler">
+        <div class="a4-page" id="invoicePreview"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="overlay" id="overlay" hidden></div>
+
+<aside class="drawer" id="historyDrawer" hidden aria-label="Invoice history">
+  <header class="drawer-head">
+    <h2>Invoice History</h2>
+    <button type="button" class="icon-btn" id="btnCloseHistory" aria-label="Close history">✕</button>
+  </header>
+  <div class="drawer-tools">
+    <input type="search" id="historySearch" placeholder="Search invoice, customer, status…" autocomplete="off">
+    <select id="historyStatusFilter">
+      <option value="">All statuses</option>
+    </select>
+    <select id="historySort">
+      <option value="date-desc">Newest first</option>
+      <option value="date-asc">Oldest first</option>
+      <option value="total-desc">Total: high to low</option>
+      <option value="total-asc">Total: low to high</option>
+    </select>
+  </div>
+  <div class="drawer-list" id="historyList"></div>
+  <footer class="drawer-foot">
+    <button type="button" class="btn btn-primary" id="btnHistoryNew">New Invoice</button>
+    <span class="drawer-foot-note" id="storageNote"></span>
+  </footer>
+</aside>
+
+<div class="modal" id="confirmModal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <h3 id="confirmTitle">Confirm</h3>
+    <p id="confirmText"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn" id="confirmCancel">Cancel</button>
+      <button type="button" class="btn btn-danger" id="confirmOk">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="vendor/jspdf.umd.min.js"></script>
+<script src="vendor/fonts.js"></script>
+<script src="js/config.js"></script>
+<script src="js/util.js"></script>
+<script src="js/calc.js"></script>
+<script src="js/store.js"></script>
+<script src="js/render.js"></script>
+<script src="js/pdf.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
