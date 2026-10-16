@@ -463,21 +463,56 @@ Ato.Pdf = (function () {
     ctx.y += h + 6;
   }
 
+  function lowerItemHeight(it) {
+    return it.head ? 5.8 : (it.kv ? 5 : 4.2);
+  }
+
+  function drawLowerItems(ctx, items, start, count, x, y) {
+    for (var n = 0; n < count; n++) {
+      var it = items[start + n];
+      if (it.head) {
+        T(ctx, it.head, x, y, { size: 8, bold: true, color: TEXT });
+        y += 5.8;
+      } else if (it.kv) {
+        T(ctx, it.kv[0] + ":", x, y, { size: 7.8, color: MUTED });
+        var vx = x + TW(ctx, it.kv[0] + ": ", 7.8, false);
+        T(ctx, it.kv[1], vx, y, { size: 8, color: TEXT });
+        y += 5;
+      } else {
+        T(ctx, it.text, x + (it.indent ? 3 : 0), y, { size: 8, color: TEXT });
+        y += 4.2;
+      }
+    }
+    return y;
+  }
+
+  function drawLowerPanel(ctx, x, y, w, h) {
+    ctx.doc.setFillColor(PANEL_BG[0], PANEL_BG[1], PANEL_BG[2]);
+    ctx.doc.roundedRect(x, y, w, h, 2.4, 2.4, "F");
+    ctx.doc.setDrawColor(PANEL_BORDER[0], PANEL_BORDER[1], PANEL_BORDER[2]);
+    ctx.doc.setLineWidth(0.2);
+    ctx.doc.roundedRect(x, y, w, h, 2.4, 2.4, "S");
+  }
+
   function lowerSection(ctx, flags) {
     if (!flags.showLowerSection) return;
     var st = ctx.state;
     var gap = 8, padX = 3.6, padY = 3.4;
-    var panelW = 87;
-    var leftPanelX = M;
-    var rightPanelX = M + panelW + gap;
-    var leftX = leftPanelX + padX;
-    var rightX = rightPanelX + padX;
+
+    // A lone column (e.g. Notes & Terms with Payment Details disabled) spans
+    // the full content width with no divider or unused column.
+    var hasPay = !!(flags.showBank || flags.showUpi || flags.showPaymentInstructions || flags.showPaymentTerms);
+    var hasNotes = !!(flags.showNotes || flags.showTerms || flags.showFooterMessage);
+    if (!hasPay && !hasNotes) return;
+
+    var single = !hasPay || !hasNotes;
+    var panelW = single ? CW : 87;
     var textW = panelW - padX * 2;
 
     var leftItems = [];
     var rightItems = [];
 
-    if (flags.showBank) {
+    if (hasPay) {
       var b = st.bank || {};
       var bankLines = [];
       if (U.nonEmpty(b.bankName)) bankLines.push({ kv: ["Bank", b.bankName] });
@@ -486,90 +521,94 @@ Ato.Pdf = (function () {
       if (U.nonEmpty(b.ifsc)) bankLines.push({ kv: ["IFSC", b.ifsc] });
       if (U.nonEmpty(b.branch)) bankLines.push({ kv: ["Branch", b.branch] });
       if (bankLines.length) { leftItems.push({ head: "Bank Transfer" }); bankLines.forEach(function (x) { leftItems.push(x); }); }
-    }
-    if (flags.showUpi && U.nonEmpty(st.upi && st.upi.id)) {
-      leftItems.push({ head: "UPI" });
-      leftItems.push({ kv: ["UPI ID", st.upi.id] });
-    }
-    if (flags.showPaymentInstructions && U.nonEmpty(st.paymentInstructions)) {
-      leftItems.push({ head: "Payment Instructions" });
-      wrap(ctx, st.paymentInstructions, 8, false, textW).forEach(function (l) { leftItems.push({ text: l }); });
-    }
-    if (flags.showPaymentTerms && U.nonEmpty(st.paymentTerms)) {
-      leftItems.push({ head: "Payment Terms" });
-      wrap(ctx, st.paymentTerms, 8, false, textW).forEach(function (l) { leftItems.push({ text: l }); });
+      if (flags.showUpi && U.nonEmpty(st.upi && st.upi.id)) {
+        leftItems.push({ head: "UPI" });
+        leftItems.push({ kv: ["UPI ID", st.upi.id] });
+      }
+      if (flags.showPaymentInstructions && U.nonEmpty(st.paymentInstructions)) {
+        leftItems.push({ head: "Payment Instructions" });
+        wrap(ctx, st.paymentInstructions, 8, false, textW).forEach(function (l) { leftItems.push({ text: l }); });
+      }
+      if (flags.showPaymentTerms && U.nonEmpty(st.paymentTerms)) {
+        leftItems.push({ head: "Payment Terms" });
+        wrap(ctx, st.paymentTerms, 8, false, textW).forEach(function (l) { leftItems.push({ text: l }); });
+      }
     }
 
-    if (flags.showNotes && U.nonEmpty(st.notes)) {
-      rightItems.push({ head: "Notes" });
-      wrap(ctx, st.notes, 8, false, textW).forEach(function (l) { rightItems.push({ text: l }); });
-    }
-    if (flags.showTerms && U.nonEmpty(st.terms)) {
-      rightItems.push({ head: "Terms & Conditions" });
-      String(st.terms).split(/\r?\n/).map(function (s) { return s.trim(); }).filter(function (s) { return s; }).forEach(function (t, i) {
-        wrap(ctx, (i + 1) + ". " + t, 8, false, textW - 4).forEach(function (l) { rightItems.push({ text: l, indent: true }); });
-      });
-    }
-    if (flags.showFooterMessage && U.nonEmpty(st.footerMessage)) {
-      wrap(ctx, st.footerMessage, 8, false, textW).forEach(function (l) { rightItems.push({ text: l }); });
+    if (hasNotes) {
+      if (flags.showNotes && U.nonEmpty(st.notes)) {
+        rightItems.push({ head: "Notes" });
+        wrap(ctx, st.notes, 8, false, textW).forEach(function (l) { rightItems.push({ text: l }); });
+      }
+      if (flags.showTerms && U.nonEmpty(st.terms)) {
+        rightItems.push({ head: "Terms & Conditions" });
+        String(st.terms).split(/\r?\n/).map(function (s) { return s.trim(); }).filter(function (s) { return s; }).forEach(function (t, i) {
+          wrap(ctx, (i + 1) + ". " + t, 8, false, textW - 4).forEach(function (l) { rightItems.push({ text: l, indent: true }); });
+        });
+      }
+      if (flags.showFooterMessage && U.nonEmpty(st.footerMessage)) {
+        wrap(ctx, st.footerMessage, 8, false, textW).forEach(function (l) { rightItems.push({ text: l }); });
+      }
     }
 
     if (!leftItems.length && !rightItems.length) return;
 
-    function measure(items) {
-      var h = 0;
-      items.forEach(function (it) {
-        if (it.head) h += 5.8;
-        else if (it.kv) h += 5;
-        else h += 4.2;
-      });
-      return h;
+    var L = leftItems.length, R = rightItems.length;
+    var li = 0, ri = 0, newPages = 0;
+
+    while (li < L || ri < R) {
+      var top = ctx.y;
+      var panelTop = top + 7;
+      var contentTop = panelTop + padY;
+      var maxBottom = BOTTOM - 3;
+
+      var lc = 0, lh = 0;
+      while (li + lc < L && contentTop + lh + lowerItemHeight(leftItems[li + lc]) <= maxBottom) {
+        lh += lowerItemHeight(leftItems[li + lc]); lc += 1;
+      }
+      var rc = 0, rh = 0;
+      while (ri + rc < R && contentTop + rh + lowerItemHeight(rightItems[ri + rc]) <= maxBottom) {
+        rh += lowerItemHeight(rightItems[ri + rc]); rc += 1;
+      }
+
+      if (lc === 0 && rc === 0) {
+        if (newPages < 4) { newPages += 1; newPage(ctx); continue; }
+        if (li < L) { lc = 1; lh = lowerItemHeight(leftItems[li]); }
+        if (ri < R) { rc = 1; rh = lowerItemHeight(rightItems[ri]); }
+      }
+      newPages = 0;
+
+      // Once a column is exhausted the remainder flows full width.
+      var chunkSingle = single || li >= L || ri >= R;
+      if (chunkSingle) {
+        var sLabel = (li < L) ? "PAYMENT DETAILS" : "NOTES & TERMS";
+        T(ctx, sLabel, M + padX, top, { size: 8, bold: true, color: TEXT });
+        fill(ctx, M + padX, top + 4.2, 9, 1, YELLOW);
+        var sH = (li < L) ? lh : rh;
+        drawLowerPanel(ctx, M, panelTop, CW, sH + padY * 2);
+        if (li < L) drawLowerItems(ctx, leftItems, li, lc, M + padX, contentTop);
+        else drawLowerItems(ctx, rightItems, ri, rc, M + padX, contentTop);
+      } else {
+        var leftX = M + padX, rightX = M + panelW + gap + padX;
+        T(ctx, "PAYMENT DETAILS", leftX, top, { size: 8, bold: true, color: TEXT });
+        fill(ctx, leftX, top + 4.2, 9, 1, YELLOW);
+        T(ctx, "NOTES & TERMS", rightX, top, { size: 8, bold: true, color: TEXT });
+        fill(ctx, rightX, top + 4.2, 9, 1, YELLOW);
+        ctx.doc.setDrawColor(BORDER[0], BORDER[1], BORDER[2]);
+        ctx.doc.setLineWidth(0.3);
+        ctx.doc.line(M + panelW + gap / 2, top, M + panelW + gap / 2, panelTop + Math.max(lh, rh) + padY * 2);
+        drawLowerPanel(ctx, M, panelTop, panelW, Math.max(lh, rh) + padY * 2);
+        drawLowerPanel(ctx, M + panelW + gap, panelTop, panelW, Math.max(lh, rh) + padY * 2);
+        drawLowerItems(ctx, leftItems, li, lc, leftX, contentTop);
+        drawLowerItems(ctx, rightItems, ri, rc, rightX, contentTop);
+      }
+
+      var chunkH = chunkSingle ? ((li < L) ? lh : rh) : Math.max(lh, rh);
+      ctx.y = contentTop + chunkH + padY + 6;
+      li += lc; ri += rc;
+
+      if (li < L || ri < R) newPage(ctx);
     }
-    var panelH = Math.max(measure(leftItems), measure(rightItems)) + padY * 2;
-    ensureSpace(ctx, 7 + panelH + 8);
-
-    var top = ctx.y;
-    var panelTop = top + 7;
-
-    T(ctx, "PAYMENT DETAILS", leftX, top, { size: 8, bold: true, color: TEXT });
-    fill(ctx, leftX, top + 4.2, 9, 1, YELLOW);
-    T(ctx, "NOTES & TERMS", rightX, top, { size: 8, bold: true, color: TEXT });
-    fill(ctx, rightX, top + 4.2, 9, 1, YELLOW);
-
-    ctx.doc.setDrawColor(BORDER[0], BORDER[1], BORDER[2]);
-    ctx.doc.setLineWidth(0.3);
-    ctx.doc.line(leftPanelX + panelW + gap / 2, top, leftPanelX + panelW + gap / 2, panelTop + panelH);
-
-    ctx.doc.setFillColor(PANEL_BG[0], PANEL_BG[1], PANEL_BG[2]);
-    ctx.doc.roundedRect(leftPanelX, panelTop, panelW, panelH, 2.4, 2.4, "F");
-    ctx.doc.roundedRect(rightPanelX, panelTop, panelW, panelH, 2.4, 2.4, "F");
-    ctx.doc.setDrawColor(PANEL_BORDER[0], PANEL_BORDER[1], PANEL_BORDER[2]);
-    ctx.doc.setLineWidth(0.2);
-    ctx.doc.roundedRect(leftPanelX, panelTop, panelW, panelH, 2.4, 2.4, "S");
-    ctx.doc.roundedRect(rightPanelX, panelTop, panelW, panelH, 2.4, 2.4, "S");
-
-    function draw(items, x) {
-      var y = panelTop + padY;
-      items.forEach(function (it) {
-        if (it.head) {
-          T(ctx, it.head, x, y, { size: 8, bold: true, color: TEXT });
-          y += 5.8;
-        } else if (it.kv) {
-          T(ctx, it.kv[0] + ":", x, y, { size: 7.8, color: MUTED });
-          var vx = x + TW(ctx, it.kv[0] + ": ", 7.8, false);
-          T(ctx, it.kv[1], vx, y, { size: 8, color: TEXT });
-          y += 5;
-        } else {
-          T(ctx, it.text, x + (it.indent ? 3 : 0), y, { size: 8, color: TEXT });
-          y += 4.2;
-        }
-      });
-      return y;
-    }
-
-    var lEnd = draw(leftItems, leftX);
-    var rEnd = draw(rightItems, rightX);
-    ctx.y = Math.max(lEnd, rEnd) + 4;
   }
 
   function footer(ctx, flags) {

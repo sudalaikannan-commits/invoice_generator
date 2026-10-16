@@ -25,6 +25,24 @@
   min-height: 297mm;
 }
 
+.inv-pages {
+  width: 210mm;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10mm;
+  transform-origin: top left;
+}
+
+.inv-measure {
+  position: fixed;
+  top: 0;
+  left: -10000px;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .inv-header {
   background: var(--black);
   color: #fff;
@@ -35,8 +53,19 @@
   align-items: center;
   justify-content: space-between;
   position: relative;
-  border-bottom: 1mm solid var(--yellow);
+  border-bottom: none;
   flex: 0 0 auto;
+}
+
+.inv-header::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1mm;
+  z-index: 3;
+  pointer-events: none;
 }
 
 .inv-header-brand {
@@ -78,6 +107,31 @@
   display: flex;
   align-items: center;
   gap: 2mm;
+}
+
+.inv-header-cont {
+  height: 13mm;
+  border-bottom-width: 0.6mm;
+}
+.inv-header-cont::after {
+  height: 0.6mm;
+}
+
+.inv-header-cont .inv-logo {
+  max-height: 7mm;
+  max-width: 30mm;
+}
+
+.inv-header-cont .inv-logo.is-default {
+  width: 30mm;
+  height: 6mm;
+}
+
+.inv-cont-note {
+  font-size: 8pt;
+  color: #DEDEDE;
+  letter-spacing: 0.02em;
+  text-align: right;
 }
 
 .ci {
@@ -367,23 +421,22 @@
 .words-value { font-weight: 700; color: var(--ink); }
 
 .inv-lower {
-  display: grid;
-  grid-template-columns: 1fr 1px 1fr;
-  gap: 0 9mm;
+  display: flex;
   margin-bottom: 5mm;
   min-width: 0;
 }
 
-.inv-lower::before {
-  content: "";
-  grid-column: 2;
-  grid-row: 1;
-  background: var(--border);
-}
+.lower-col { flex: 1 1 0; min-width: 0; }
 
-.lower-col { min-width: 0; }
-.pay-col { grid-column: 1; }
-.notes-col { grid-column: 3; }
+/* Divider + gutters only when both columns are present; a lone column
+   (e.g. Notes & Terms with Payment Details disabled) spans full width. */
+.inv-lower:not(.no-pay):not(.no-notes) .pay-col {
+  border-right: 1px solid var(--border);
+  padding-right: 9mm;
+}
+.inv-lower:not(.no-pay):not(.no-notes) .notes-col {
+  padding-left: 9mm;
+}
 
 .lower-head {
   margin: 0;
@@ -517,13 +570,31 @@
     overflow: visible !important;
   }
 
+  .inv-pages {
+    display: block !important;
+    width: auto !important;
+    margin: 0 !important;
+    gap: 0 !important;
+    transform: none !important;
+  }
+
   .a4-page {
     transform: none !important;
     width: 210mm !important;
-    min-height: 297mm !important;
+    height: 297mm !important;
+    min-height: 0 !important;
     box-shadow: none !important;
     margin: 0 !important;
-    overflow: visible !important;
+    overflow: hidden !important;
+    break-after: page;
+    page-break-after: always;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .a4-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
   }
 
   .inv-table thead { display: table-header-group; }
